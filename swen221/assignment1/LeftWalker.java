@@ -8,9 +8,11 @@ import maze.*;
 /**
  * An implementation of the left walker, which you need to complete according to
  * the specification given in the assignment handout.
- * 
+ *
  */
 public class LeftWalker extends Walker {
+	//This is the facing direction of the walker. The walker faces north at the start position.
+	private Direction facing = Direction.NORTH;
 
 	public LeftWalker() {
 		super("Left Walker");
@@ -29,13 +31,77 @@ public class LeftWalker extends Walker {
 		// direction. This is not what the specification said it should do, so
 		// tests will fail ... but you should find it helpful to look at how it
 		// works!
-		return getRandomDirection(v);
+
+		//Step north if there are no adjoining walls
+		if(!hasAdjacentWalls(v)){
+			System.out.println(facing);//debug
+			return Direction.NORTH;
+		}
+		else{
+			//Otherwise,  the walker turns clockwise until it has a wall to its left
+			while(!hasLeftWall(v)){
+				turnClockwise();
+				System.out.println(facing+"=============");//debug
+			}
+			//move forward in the facing direction to follow the left wall
+			return facing;
+		}
+	}
+
+	/*
+	 * Check if there is an adjacent wall around the walker at the start position.
+	 */
+	private boolean hasAdjacentWalls(View v){
+		Direction[] allDirections = Direction.values();
+		for (Direction d : allDirections) {
+			if (!v.mayMove(d)) {
+				//Yes, there is an adjacent wall
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/*
+	 * This turns the facing direction clockwise. For example, Direction.NORTH will be turned to Direction.EAST.
+	 */
+	private void turnClockwise(){
+		switch(this.facing){
+		case NORTH:
+			facing = Direction.EAST;
+			break;
+		case SOUTH:
+			facing = Direction.WEST;
+			break;
+		case WEST:
+			facing = Direction.NORTH;
+			break;
+		case EAST:
+			facing = Direction.SOUTH;
+		}
+	}
+
+	/*
+	 * This checks if there is a wall to the left of the walker according to its facing direction.
+	 */
+	private boolean hasLeftWall(View v){
+		switch(this.facing){
+		case NORTH:
+			return !v.mayMove(Direction.WEST);
+		case SOUTH:
+			return !v.mayMove(Direction.EAST);
+		case WEST:
+			return !v.mayMove(Direction.SOUTH);
+		case EAST:
+			return !v.mayMove(Direction.NORTH);
+		default: return false;
+		}
 	}
 
 	/**
 	 * This simply returns a randomly chosen (valid) direction which the walker
 	 * can move in.
-	 * 
+	 *
 	 * @param View
 	 *            v
 	 * @return
@@ -53,7 +119,7 @@ public class LeftWalker extends Walker {
 	/**
 	 * Determine the list of possible directions. That is, the directions which
 	 * are not blocked by a wall.
-	 * 
+	 *
 	 * @param v
 	 *            The View object, with which we can determine which directions
 	 *            are possible.
@@ -75,7 +141,7 @@ public class LeftWalker extends Walker {
 
 	/**
 	 * Select a random direction from a list of possible directions.
-	 * 
+	 *
 	 * @param possibleDirections
 	 * @return
 	 */
