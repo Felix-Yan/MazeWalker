@@ -12,7 +12,9 @@ import maze.*;
  */
 public class LeftWalker extends Walker {
 	//This is the facing direction of the walker. The walker faces north at the start position.
-	private Direction facing = Direction.NORTH;
+	private Direction facingDirection = Direction.NORTH;
+	//This is to indicate whether the walker has been caliberated in the beginning.
+	private boolean caliberated = false;
 
 	public LeftWalker() {
 		super("Left Walker");
@@ -32,24 +34,94 @@ public class LeftWalker extends Walker {
 		// tests will fail ... but you should find it helpful to look at how it
 		// works!
 
+		if(!caliberated){
+			return caliberate(v);
+		}
+		return followLeftWall(v);
+	}
+
+	/**
+	 * Caliberate the facing direction and position of the walker at the beginning point.
+	 * The walker is caliberated once it finds a left wall.
+	 * @param v
+	 * @return
+	 */
+	private Direction caliberate(View v){
 		//Step north if there are no adjoining walls
 		if(!hasAdjacentWalls(v)){
-			System.out.println(facing);//debug
 			return Direction.NORTH;
 		}
 		else{
 			//Otherwise,  the walker turns clockwise until it has a wall to its left
 			while(!hasLeftWall(v)){
 				turnClockwise();
-				System.out.println(facing+"=============");//debug
+				System.out.println(facingDirection+"=============");//debug
 			}
-			//move forward in the facing direction to follow the left wall
-			return facing;
+			caliberated = true;
+			//if blocked, keep turning clockwise
+			while(isBlocked(v)){
+				turnClockwise();
+			}
+			return facingDirection;
 		}
 	}
 
-	/*
+	/**
+	 * This checks whether there is a wall in the facing direction blocking the movement.
+	 * @param v
+	 * @return
+	 */
+	private boolean isBlocked(View v){
+		return !v.mayMove(facingDirection);
+	}
+
+	/**
+	 * This uses the moving strategy of following the left wall. It gives the moving direction after caliberation.
+	 * @param v
+	 * @return
+	 */
+	private Direction followLeftWall(View v) {
+		//try to find the left wall again at the turning wall corner
+		if(!hasAdjacentWalls(v)){
+			turnLeft(v);
+		}
+		//if blocked, see if there is a way to the left. If there is, turn left. Otherwise, turn clockwise.
+		while(isBlocked(v)){
+			if(!hasLeftWall(v)){
+				turnLeft(v);
+				break;
+			}
+			else{
+				turnClockwise();
+			}
+		}
+		return facingDirection;
+	}
+
+	/**
+	 * This makes the walker turn left by changing its facingDirection.
+	 * @param v
+	 */
+	private void turnLeft(View v){
+		switch(this.facingDirection){
+		case NORTH:
+			facingDirection = Direction.WEST;
+			break;
+		case SOUTH:
+			facingDirection = Direction.EAST;
+			break;
+		case WEST:
+			facingDirection = Direction.SOUTH;
+			break;
+		case EAST:
+			facingDirection = Direction.NORTH;
+		}
+	}
+
+	/**
 	 * Check if there is an adjacent wall around the walker at the start position.
+	 * @param v
+	 * @return
 	 */
 	private boolean hasAdjacentWalls(View v){
 		Direction[] allDirections = Direction.values();
@@ -62,30 +134,32 @@ public class LeftWalker extends Walker {
 		return false;
 	}
 
-	/*
+	/**
 	 * This turns the facing direction clockwise. For example, Direction.NORTH will be turned to Direction.EAST.
 	 */
 	private void turnClockwise(){
-		switch(this.facing){
+		switch(this.facingDirection){
 		case NORTH:
-			facing = Direction.EAST;
+			facingDirection = Direction.EAST;
 			break;
 		case SOUTH:
-			facing = Direction.WEST;
+			facingDirection = Direction.WEST;
 			break;
 		case WEST:
-			facing = Direction.NORTH;
+			facingDirection = Direction.NORTH;
 			break;
 		case EAST:
-			facing = Direction.SOUTH;
+			facingDirection = Direction.SOUTH;
 		}
 	}
 
-	/*
-	 * This checks if there is a wall to the left of the walker according to its facing direction.
+	/**
+	 *  This checks if there is a wall to the left of the walker according to its facing direction.
+	 * @param v
+	 * @return
 	 */
 	private boolean hasLeftWall(View v){
-		switch(this.facing){
+		switch(this.facingDirection){
 		case NORTH:
 			return !v.mayMove(Direction.WEST);
 		case SOUTH:
