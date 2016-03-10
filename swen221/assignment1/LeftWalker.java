@@ -15,9 +15,14 @@ public class LeftWalker extends Walker {
 	private Direction facingDirection = Direction.NORTH;
 	//This is to indicate whether the walker has been caliberated in the beginning.
 	private boolean caliberated = false;
+	//This list has all the squares visited by the walker
+	private List<Square> visited = new ArrayList<Square>();
+	//This records the current square of the walker
+	private Square current;
 
 	public LeftWalker() {
 		super("Left Walker");
+		current = new Square(0,0);//let (0,0) be the starting square of the walker.
 	}
 
 	@Override
@@ -41,6 +46,28 @@ public class LeftWalker extends Walker {
 	}
 
 	/**
+	 * This memorizes all the squares the walker has visited. It also updates the current square.
+	 * @param d
+	 */
+	private void memorization(Direction d){
+		current.setExit(d);
+		visited.add(current);
+		switch(d){
+		case NORTH:
+			current = new Square(current.x,current.y+1);
+			break;
+		case SOUTH:
+			current = new Square(current.x,current.y-1);
+			break;
+		case WEST:
+			current = new Square(current.x-1,current.y);
+			break;
+		case EAST:
+			current = new Square(current.x+1,current.y);
+		}
+	}
+
+	/**
 	 * Caliberate the facing direction and position of the walker at the beginning point.
 	 * The walker is caliberated once it finds a left wall.
 	 * @param v
@@ -49,19 +76,20 @@ public class LeftWalker extends Walker {
 	private Direction caliberate(View v){
 		//Step north if there are no adjoining walls
 		if(!hasAdjacentWalls(v)){
+			memorization(Direction.NORTH);
 			return Direction.NORTH;
 		}
 		else{
 			//Otherwise,  the walker turns clockwise until it has a wall to its left
 			while(!hasLeftWall(v)){
 				turnClockwise();
-				System.out.println(facingDirection+"=============");//debug
 			}
 			caliberated = true;
 			//if blocked, keep turning clockwise
 			while(isBlocked(v)){
 				turnClockwise();
 			}
+			memorization(facingDirection);
 			return facingDirection;
 		}
 	}
@@ -82,7 +110,7 @@ public class LeftWalker extends Walker {
 	 */
 	private Direction followLeftWall(View v) {
 		//try to find the left wall again at the turning wall corner
-		if(!hasAdjacentWalls(v)){
+		if(!hasLeftWall(v)){
 			turnLeft(v);
 		}
 		//if blocked, see if there is a way to the left. If there is, turn left. Otherwise, turn clockwise.
@@ -95,6 +123,18 @@ public class LeftWalker extends Walker {
 				turnClockwise();
 			}
 		}
+		//if the square has been visited before and the facing direction was the exit direction,
+		//try a different exit direction.
+		Square toBeRemoved = null;
+		for(Square s: visited){
+			if(s.equals(current) && (facingDirection == s.getExit())){
+				toBeRemoved = s;
+				turnClockwise();
+				caliberated = false; //now we should recaliberate after turning to a new direction.
+			}
+		}
+		visited.remove(toBeRemoved);
+		memorization(facingDirection);
 		return facingDirection;
 	}
 
@@ -222,5 +262,51 @@ public class LeftWalker extends Walker {
 	private Direction selectRandomDirection(List<Direction> possibleDirections) {
 		int random = (int) (Math.random() * possibleDirections.size());
 		return possibleDirections.get(random);
+	}
+
+	/**
+	 * A Square object records the position of the walker in relation to its starting point.
+	 * The last attempted exit direction for the position is also recorded.
+	 * @author yanlong
+	 *
+	 */
+	private class Square{
+		public final int x;// the horizontal position of the square
+		public final int y;// the vertical position of the square
+		private Direction exit;// the direction in which the walker exited the square last time
+		/**
+		 * The constructor for a Square object. It takes x and y arguments to finalize the position of the Square.
+		 * @param x
+		 * @param y
+		 */
+		public Square(int x, int y){
+			this.x = x;
+			this.y = y;
+		}
+
+		/**
+		 * A setter for the exit direction.
+		 * @param d
+		 */
+		public void setExit(Direction d){
+			this.exit = d;
+		}
+
+		/**
+		 * A getter for the exit direction.
+		 * @return
+		 */
+		public Direction getExit(){
+			return exit;
+		}
+
+		/**
+		 * This checks the equality of two Square objects. They are equal if they have the same x and y values.
+		 * @param other
+		 * @return true if two squares are at the same position
+		 */
+		public boolean equals(Square other){
+			return this.x==other.x && this.y==other.y;
+		}
 	}
 }
